@@ -27,7 +27,7 @@ def inverse(f_array: np.ndarray) -> np.ndarray:
 
 def dilute_bands(image: hyspec.SpyFileSubclass, keep: float, new=True) -> hyspec.SpyFileSubclass:
     if new:
-        image = hyspec.copy(image)
+        image = hyspec.copy(image, dtype=np.csingle)
     mem_map = image.open_memmap(interleave='bsq', writable=True)
     for k, band in enumerate(mem_map):
         mem_map[k] = dilute(band, keep)

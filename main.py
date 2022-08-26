@@ -4,6 +4,10 @@ import spectral as sp
 import pickle
 import zlib
 import matplotlib.pyplot as plt
+import wx
+import OpenGL
+
+import diff
 import fourier
 
 
@@ -96,7 +100,7 @@ def menu(args):
     if args[0] == 'compress':
         sp.settings.envi_support_nonlowercase_params = True
         cube = sp.io.envi.open(f"{folder_path}\\{file_name}.hdr", f"{folder_path}\\{file_name}.raw")
-        cube_mem = cube.open_memmap(interleave='bsq')
+        cube_mem = cube.open_memmap(interleave='bsq').astype(np.int16)
         if len(args) < 3:
             dfl_path = compress(cube_mem, path)
             print(f"The compressed file can be found at {dfl_path}")
@@ -132,14 +136,32 @@ def count_zroes(arr):
             zero_counter += 1
     return zero_counter
 
-
 def main_1():
+    c = 0
+    def pc(counter):
+        print(f"({counter})")
+        counter += 1
+
     sp.settings.envi_support_nonlowercase_params = True
+    pc(c)
     cube = sp.io.envi.open("C:\\Users\\gursh\\hs\\image.hdr", "C:\\Users\\gursh\\hs\\image.raw")
-    sp.view_cube(cube)
+    pc(c)
+    cube_d = diff.delta(cube)
+    pc(c)
+    cube_mem = cube_d.open_memmap(interleave='bsq').astype(np.int16)
+    pc(c)
+    compress(cube_mem, cube_d.filename)
+
+    # print("(1)")
     # diluted_cube = fourier.dilute_bands(cube, 10)
-    # sp.
-    plt.show()
+    # print("(2)")
+    # dcm = diluted_cube.open_memmap(interleave='bsq').astype(np.int16)
+    # print("(3)")
+    # print("~~~", count_zroes(dcm[50]))
+    # compress(dcm, r"C:\Users\gursh\hs\image_copy.raw")
+    # print("(4)")
+    # # plt.imshow(dcm[50])
+    # # plt.show()
 
 
 
