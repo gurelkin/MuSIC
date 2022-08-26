@@ -1,10 +1,16 @@
 import os
-import spectral
+import numpy as np
+import spectral as sp
 import pickle
 import zlib
+import matplotlib.pyplot as plt
+import fourier
 
 
 def _decompose_path(path: str) -> tuple[str, str]:
+    """
+    Splits a path to a path to the lowest folder and the name of the file at the end.
+    """
     name_ext = path[path.rindex('\\') + 1:]
     file_name = name_ext[:name_ext.rindex('.')]
     folder_path = path[:path.rindex('\\' + file_name)]
@@ -12,6 +18,12 @@ def _decompose_path(path: str) -> tuple[str, str]:
 
 
 def compress(obj: object, path: str) -> str:
+    """
+    Deflates an python object.
+    :param obj: the object to be deflated.
+    :param path: a path to a file in the folder that will contain the deflated object, with its designated name.
+    :return: a path to the '.dfl' file containing the deflated object.
+    """
     folder_path, file_name = _decompose_path(path)
     file_path = f"{folder_path}\\{file_name}.dfl"
     with open(file_path, mode='w+b') as dfl_file:
@@ -29,6 +41,11 @@ def compress(obj: object, path: str) -> str:
 
 
 def decompress(dfl_path: str) -> object:
+    """
+    Inflates a deflated object
+    :param dfl_path: The path to the '.dfl' file containing the deflated object.
+    :return: an identical copy of the deflated object and a path to its '.ifl' file.
+    """
     with open(dfl_path, mode='r+b') as dfl_file:
         comp_buffer = dfl_file.read()
     buffer = zlib.decompress(comp_buffer)
@@ -77,8 +94,8 @@ def menu(args):
     path = args[1]
     folder_path, file_name = _decompose_path(path)
     if args[0] == 'compress':
-        spectral.settings.envi_support_nonlowercase_params = True
-        cube = spectral.io.envi.open(f"{folder_path}\\{file_name}.hdr", f"{folder_path}\\{file_name}.raw")
+        sp.settings.envi_support_nonlowercase_params = True
+        cube = sp.io.envi.open(f"{folder_path}\\{file_name}.hdr", f"{folder_path}\\{file_name}.raw")
         cube_mem = cube.open_memmap(interleave='bsq')
         if len(args) < 3:
             dfl_path = compress(cube_mem, path)
@@ -89,7 +106,7 @@ def menu(args):
     elif args[0] == 'decompress':
         if len(args) < 3:
             cube, ifl_path = decompress(path)
-            print(f"The deompressed file can be found at {ifl_path}")
+            print(f"The decompressed file can be found at {ifl_path}")
         else:
             methods = args[2:]
             # TODO: complete all methods
@@ -103,9 +120,42 @@ def menu(args):
 def main():
     stop = False
     while not stop:
-        args = input("Inset a command:\n").split(' ')
+        args = input("Insert a command: ").split(' ')
         stop = menu(args)
 
 
+
+def count_zroes(arr):
+    zero_counter = 0
+    for index, value in np.ndenumerate(arr):
+        if value == 0:
+            zero_counter += 1
+    return zero_counter
+
+
+def main_1():
+    sp.settings.envi_support_nonlowercase_params = True
+    cube = sp.io.envi.open("C:\\Users\\gursh\\hs\\image.hdr", "C:\\Users\\gursh\\hs\\image.raw")
+    sp.view_cube(cube)
+    # diluted_cube = fourier.dilute_bands(cube, 10)
+    # sp.
+    plt.show()
+
+
+
+    # image = plt.imread("C:\\Users\\gursh\\hs\\river.jpg", format='jpeg')
+    # m, n = image.shape
+    # f_image = np.zeros_like(image, dtype='complex')
+    # for i in range(m):
+    #     f_image[i] = fourier.dilute(image[i], 10)
+    # # f_image = fourier.dilute(image, 10)
+    # print(count_zroes(f_image))
+    # f_image_inv = np.zeros_like(image)
+    # for i in range(m):
+    #     f_image_inv[i] = fourier.inverse(f_image[i])
+    # plt.imshow(fourier.inverse(f_image_inv), cmap='gray', vmin=0, vmax=255)
+    # plt.show()
+
+
 if __name__ == '__main__':
-    main()
+    main_1()
