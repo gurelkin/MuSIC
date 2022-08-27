@@ -17,23 +17,20 @@ def str_interleave(i: int) -> str:
         return 'bil'
     if i == sp.BIP:
         return 'bip'
-    return 'bsq'
+    if i == sp.BSQ:
+        return 'bsq'
 
 
-def copy(original: SpyFileSubclass, dtype=None) -> SpyFileSubclass:
+def copy(original: SpyFileSubclass, suffix="copy") -> SpyFileSubclass:
     """
     Creates a copy of the original SpyFile in its folder.
     :param original: the SpyFile to be copied
+    :param suffix: an addition to the name of the original file.
     :return: The copy
     """
-    dtype_ = original.dtype if dtype is None else dtype
-    original_hdr, _ = hdr_raw(original)
-    new_hdr = original_hdr.replace(".hdr", "_copy.hdr")
-    # shutil.copyfile(original_hdr, new_hdr)
-    return sp.io.envi.create_image(new_hdr,
-                                   metadata=original.metadata,
-                                   dtype=dtype_,
-                                   force=True,
-                                   ext='.raw',
-                                   interleave=str_interleave(original.interleave))
-
+    original_hdr, original_raw = hdr_raw(original)
+    new_hdr = original_hdr.replace(".hdr", f"_{suffix}.hdr")
+    new_raw = original_raw.replace(".raw", f"_{suffix}.raw")
+    shutil.copy(original_hdr, new_hdr)
+    shutil.copy(original_raw, new_raw)
+    return sp.io.envi.open(new_hdr, new_raw)

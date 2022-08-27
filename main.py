@@ -137,20 +137,18 @@ def count_zroes(arr):
     return zero_counter
 
 def main_1():
-    c = 0
-    def pc(counter):
-        print(f"({counter})")
-        counter += 1
-
     sp.settings.envi_support_nonlowercase_params = True
-    pc(c)
-    cube = sp.io.envi.open("C:\\Users\\gursh\\hs\\image.hdr", "C:\\Users\\gursh\\hs\\image.raw")
-    pc(c)
+    cube = sp.io.envi.open(r"C:\Users\gursh\hs\image.hdr", r"C:\Users\gursh\hs\image.raw")
+    cube_mem = cube.open_memmap(interleave='bsq')
     cube_d = diff.delta(cube)
-    pc(c)
-    cube_mem = cube_d.open_memmap(interleave='bsq').astype(np.int16)
-    pc(c)
-    compress(cube_mem, cube_d.filename)
+    cube_d_mem = cube_d.open_memmap(interleave='bsq')
+    dfl_path = compress(cube_d_mem, cube_d.filename)
+    d_cube_d_mem, ifl_path = decompress(dfl_path)
+    sp.io.envi.create_image()
+    boolarr = []
+    # for b in range(cube.nbands):
+    #     boolarr = cube_mem[b] == cu
+    # print bollarr
 
     # print("(1)")
     # diluted_cube = fourier.dilute_bands(cube, 10)
