@@ -19,7 +19,7 @@ def delta(cube: hyspec.SpyFileSubclass, new=True) -> hyspec.SpyFileSubclass:
     return sp.io.envi.open(*hyspec.hdr_raw(cube))
 
 
-def rho_original(cube: hyspec.SpyFileSubclass, new=True) -> hyspec.SpyFileSubclass:
+def rho(cube: hyspec.SpyFileSubclass, new=True) -> hyspec.SpyFileSubclass:
     """
     Reverse the effect of delta(cube).
     :param cube: a hyper-spectral cube that went through delta.
@@ -29,7 +29,7 @@ def rho_original(cube: hyspec.SpyFileSubclass, new=True) -> hyspec.SpyFileSubcla
     if new:
         cube = hyspec.copy(cube, suffix="rho")
     cube_mem = cube.open_memmap(interleave='bsq', writable=True)
-    for k in range(0, cube.nbands):
+    for k in range(0, cube.nbands-1):
         cube_mem[k + 1] = cube_mem[k + 1] + cube_mem[k]
     cube_mem.flush()
     return sp.io.envi.open(*hyspec.hdr_raw(cube))

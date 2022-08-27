@@ -25,13 +25,15 @@ def inverse(f_array: np.ndarray) -> np.ndarray:
     return np.abs(np.fft.ifft2(f_array))
 
 
-def dilute_bands(image: hyspec.SpyFileSubclass, keep: float, new=True) -> hyspec.SpyFileSubclass:
+# TODO: return the transformed cube (where dtype=csingle) and then use sparse matrix ant dtore its serialization (needs to use pickle)
+#       in order to change the matrix back to a cube, create an empty one (using envi according to the hdr) and change its memmap.
+def dilute_bands(cube: hyspec.SpyFileSubclass, keep: float, new=True) -> hyspec.SpyFileSubclass:
     if new:
-        image = hyspec.copy(image, dtype=np.csingle)
-    mem_map = image.open_memmap(interleave='bsq', writable=True)
+        cube = hyspec.copy(cube)
+    mem_map = cube.open_memmap(interleave='bsq', writable=True)
     for k, band in enumerate(mem_map):
         mem_map[k] = dilute(band, keep)
-    return sp.io.envi.open(*hyspec.hdr_raw(image))
+    return sp.io.envi.open(*hyspec.hdr_raw(cube))
 
 
 # def dilute_image(image: hyspec.SpyFileSubclass, keep: float, new=True) -> None:
@@ -52,6 +54,3 @@ def dilute_bands(image: hyspec.SpyFileSubclass, keep: float, new=True) -> hyspec
 #             pixel = mem_map[i][j]
 #             mem_map[i][j] = dilute(pixel, keep)
 
-
-def inverse(f_array: np.ndarray) -> np.ndarray:
-    return np.abs(np.fft.ifft2(f_array))
