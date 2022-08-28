@@ -1,11 +1,13 @@
 import os
 import numpy as np
 import spectral as sp
+import pickle
 import zlib
 import matplotlib.pyplot as plt
 
 import diff
 import fourier
+import hyspec
 
 
 def _decompose_path(path: str) -> tuple[str, str, str]:
@@ -110,9 +112,12 @@ def main():
 
 def main_1():
     sp.settings.envi_support_nonlowercase_params = True
-    cube = sp.io.envi.open(r"C:\Users\gursh\hs\image.hdr", r"C:\Users\gursh\hs\image.raw")
+    cube = sp.io.envi.open("C:/Users/gursh/hs/image.hdr", "C:/Users/gursh/hs/image.raw")
+    cube_f = fourier.dilute_bands(cube, 10)
+    sparse = hyspec.to_sparse(cube_f)
+    with open("C:\\Users\\gursh\\hs\\image.sdf", mode='w+b') as file:
+        pickle.dump((sparse, cube_f.metadata), file)
 
-    # fourier.dilute_bands(cube)
 
 if __name__ == '__main__':
     main_1()
