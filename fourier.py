@@ -29,9 +29,7 @@ def inverse(f_array: np.ndarray) -> np.ndarray:
 #  needs to use pickle) in order to change the matrix back to a cube, create an empty one (using envi according to
 #  the hdr) and change its memmap.
 
-def dilute_bands(cube: hyspec.SpyFileSubclass, keep: float, new=True) -> hyspec.SpyFileSubclass:
-    if new:
-        cube = hyspec.copy(cube)
+def dilute_bands(cube: hyspec.SpyFileSubclass, keep: float) -> hyspec.SpyFileSubclass:
     cube = hyspec.change_dtype(cube, np.csingle)
     cube_mem = cube.open_memmap(interleave='bsq', writable=True)
     for k, band in enumerate(cube_mem):
@@ -39,6 +37,13 @@ def dilute_bands(cube: hyspec.SpyFileSubclass, keep: float, new=True) -> hyspec.
     cube_mem.flush()
     return sp.io.envi.open(*hyspec.hdr_raw(cube))
 
+
+def reconstruct_bands(cube: hyspec.SpyFileSubclass) -> hyspec.SpyFileSubclass:
+    cube_mem = cube.open_memmap(interleave='bsq', writable=True)
+    for k, band in enumerate(cube_mem):
+        cube_mem[k] = inverse(band)
+    cube_mem.flush()
+    return hyspec.change_dtype(cube, np.uint16)
 
 # def dilute_bands(cube: hyspec.SpyFileSubclass, keep: float, new=True) -> hyspec.SpyFileSubclass:
 #     if new:

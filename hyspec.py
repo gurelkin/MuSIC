@@ -50,7 +50,8 @@ def change_dtype(cube: SpyFileSubclass, dtype) -> SpyFileSubclass:
     :return: the casted cube as a spectral.SpyFile object.
     """
     hdr_path, _ = hdr_raw(cube)
-    new_hdr_path = hdr_path.replace(".hdr", "_casted.hdr")
+    new_hdr_path = hdr_path.replace(".hdr", ".cst.hdr")
+    new_hdr_path = new_hdr_path.replace(".cst.cst.hdr", ".hdr")
     shutil.copy2(hdr_path, new_hdr_path)
     return sp.io.envi.create_image(new_hdr_path,
                                    cube.metadata,
@@ -68,14 +69,13 @@ def to_sparse(cube: SpyFileSubclass) -> List:
     return sparse
 
 
-def from_sparse(sparse: List, hdr_path: str, metadata: Dict) -> SpyFileSubclass:
+def from_sparse(hdr_path: str, sparse: List, metadata: Dict) -> SpyFileSubclass:
     cube = sp.io.envi.create_image(hdr_path,
                                    metadata,
                                    force=True,
                                    ext='.raw')
-    cube_mem = cube.open_memmap(interleave='bsq', writable=True)
+    cube_mem: np.memmap = cube.open_memmap(interleave='bsq', writable=True)
     for l in range(cube.nbands):
-        cube_mem[l] = np.zeros_like(cube_mem[l].shape)
         coordinates = scipy.sparse.find(sparse[l])
         for k in range(len(coordinates[0])):
             i, j, v = coordinates[0][k], coordinates[1][k], coordinates[2][k]

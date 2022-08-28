@@ -21,14 +21,12 @@ def _decompose_path(path: str) -> tuple[str, str, str]:
     return folder_path, file_name, file_ext
 
 
-def deflate(path: str, delete=False) -> str:
+def deflate(path: str) -> str:
     with open(path, mode='rb') as raw_file:
         compressed = zlib.compress(raw_file.read())
     dfl_path = path + ".dfl"
     with open(dfl_path, mode='wb') as dfl_file:
         dfl_file.write(compressed)
-    if delete:  # TODO: remove this. In the future all files will be deleted
-        os.remove(path)
     print(f"\'{path}\' was successfully compressed")
     return dfl_path
 
@@ -37,10 +35,8 @@ def inflate(dfl_path: str) -> str:
     with open(dfl_path, mode='rb') as dfl_file:
         decompressed = zlib.decompress(dfl_file.read())
     og_path = dfl_path[:dfl_path.rindex('.')]
-    print("og:", og_path)
     with open(og_path, mode='wb') as og_file:
         og_file.write(decompressed)
-    os.remove(dfl_path)
     print(f"\'{dfl_path}\' was successfully decompressed")
     return og_path
 
@@ -59,6 +55,9 @@ Command Options:
 
 >>> delete <path>
     To delete the file at the specified path.
+    
+>>> copy <path> <new_name>
+    To copy a file to its own directory under a new name.
 
 >>> help
     To display this menu.
@@ -66,7 +65,7 @@ Command Options:
 >>> exit
     To exit the program.
 
-<method> = fft | delta TODO: add more methods
+<method> = fft | delta
 """
 
 
@@ -104,6 +103,7 @@ def menu(args):
 
 
 def main():
+    sp.settings.envi_support_nonlowercase_params = True
     stop = False
     while not stop:
         args = input("Insert a command: ").split(' ')
@@ -114,10 +114,53 @@ def main_1():
     sp.settings.envi_support_nonlowercase_params = True
     cube = sp.io.envi.open("C:/Users/gursh/hs/image.hdr", "C:/Users/gursh/hs/image.raw")
     cube_f = fourier.dilute_bands(cube, 10)
-    sparse = hyspec.to_sparse(cube_f)
+    sparse, new_path = hyspec.to_sparse(cube_f)
     with open("C:\\Users\\gursh\\hs\\image.sdf", mode='w+b') as file:
         pickle.dump((sparse, cube_f.metadata), file)
 
+    with open("C:\\Users\\gursh\\hs\\image.sdf", mode='rb') as file:
+        sparse_, metadata_= pickle.load(file)
+    cube_ = hyspec.from_sparse(sparse_, new_path, metadata_)
+    cube_r = fourier.reconstruct_bands(cube_)
+    mem = cube_r.open_memmap(interleave='bsq')
+    for k in range(cube_r.nbands):
+        print(mem[k])
+
+
+def delta_compress(hdr: str, raw: str) -> str:
+    cube = sp.io.envi.open(hdr, raw)
+    cube_delta = diff.delta(cube)
+    return deflate(cube_delta.filename)
+
+
+def rho_decompress(hdr: str, dfl: str) -> str:
+    raw = inflate(dfl)
+    cube_delta = sp.io.envi.open(hdr, raw)
+    cube = diff.rho(cube_delta)
+    return cube.filename
+
+
+def fft_compress(hdr: str, raw: str, keep) -> str:
+    cube = sp.io.envi.open(hdr, raw)
+    cube_fft = fourier.dilute_bands(cube, keep)
+    sparse = hyspec.to_sparse(cube_fft)
+    metadata = cube_fft.metadata
+    sps = cube_fft.filename.replace(".raw", ".sps")
+    with open(sps, mode='wb') as sps_file:
+        pickle.dump((sparse, metadata), sps_file)
+    return deflate(sps)
+
+
+def fft_decompress(hdr: str, dfl: str) -> str:
+    sps = inflate(dfl)
+    with open(sps, mode='rb') as sps_file:
+        sparse, metadata = pickle.load(sps_file)
+    cube_fft = hyspec.from_sparse(hdr, sparse, metadata)
+    cube = fourier.reconstruct_bands(cube_fft)
+    return cube.filename
+
 
 if __name__ == '__main__':
-    main_1()
+    hdr__ = "C:/Users/gursh/hs/image.hdr"
+    raw__ = "C:/Users/gursh/hs/image.raw"
+

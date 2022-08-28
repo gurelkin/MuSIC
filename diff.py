@@ -10,8 +10,8 @@ def delta(cube: hyspec.SpyFileSubclass, new=True) -> hyspec.SpyFileSubclass:
     :param new: whether to create a new file for delta(cube).
     :return: a new hyper-spectral image where every band holds its difference from the previous band.
     """
-    if new:
-        cube = hyspec.copy(cube, suffix="delta")
+    # if new:
+    #     cube = hyspec.copy(cube, suffix="delta")
     cube_mem = cube.open_memmap(interleave='bsq', writable=True)
     for k in reversed(range(0, cube.nbands - 1)):
         cube_mem[k + 1] = cube_mem[k + 1] - cube_mem[k]
@@ -26,8 +26,8 @@ def rho(cube: hyspec.SpyFileSubclass, new=True) -> hyspec.SpyFileSubclass:
     :param new: whether to create a new file for rho(cube)
     :return: the original cube.
     """
-    if new:
-        cube = hyspec.copy(cube, suffix="rho")
+    # if new:
+    #     cube = hyspec.copy(cube, suffix="rho")
     cube_mem = cube.open_memmap(interleave='bsq', writable=True)
     for k in range(0, cube.nbands-1):
         cube_mem[k + 1] = cube_mem[k + 1] + cube_mem[k]
