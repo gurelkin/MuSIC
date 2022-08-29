@@ -35,33 +35,35 @@ def copy(original: SpyFileSubclass, suffix="copy") -> SpyFileSubclass:
     new_raw = original_raw.replace(".raw", f"_{suffix}.raw")
     shutil.copy2(original_hdr, new_hdr)
     shutil.copy2(original_raw, new_raw)
-    # with open(shutil.copy2(original_hdr, new_hdr)) as hdr_file:
-    #     hdr_file.close()
-    # with open(shutil.copy2(original_raw, new_raw)) as raw_file:
-    #     raw_file.close()
     return sp.io.envi.open(new_hdr, new_raw)
 
 
-def change_dtype(cube: SpyFileSubclass, dtype) -> SpyFileSubclass:
+def zeros_like(cube: SpyFileSubclass, dtype=None) -> SpyFileSubclass:
     """
-    Converts a cube's data type to `dtype`.
+    Creates a zero-filled copy of `cube` of type `dtype`.
     :param cube: the spectral.SpyFile object.
-    :param dtype: the new data type (must be a legal numpy dtype)
-    :return: the casted cube as a spectral.SpyFile object.
+    :param dtype: the new data type (must be a legal numpy dtype).
+    :return: the new cube as a spectral.SpyFile object.
     """
+    dtype_ = cube.dtype if dtype is None else dtype
     hdr_path, _ = hdr_raw(cube)
-    new_hdr_path = hdr_path.replace(".hdr", ".cst.hdr")
-    new_hdr_path = new_hdr_path.replace(".cst.cst.hdr", ".hdr")
+    new_hdr_path = hdr_path.replace(".hdr", "_.hdr")
+    new_hdr_path = new_hdr_path.replace("__.hdr", ".hdr")
     shutil.copy2(hdr_path, new_hdr_path)
     return sp.io.envi.create_image(new_hdr_path,
                                    cube.metadata,
-                                   dtype=dtype,
+                                   dtype=dtype_,
                                    force=True,
                                    ext='.raw',
                                    interleave=str_interleave(cube.interleave))
 
 
 def to_sparse(cube: SpyFileSubclass) -> List:
+    """
+    Converts a hyper-spectral cube into a sparse matrix.
+    :param cube: the hyper-spectral image to be converted.
+    :return: a sparse matrix in CSR format.
+    """
     mem_cube = cube.open_memmap(interleave='bsq')
     sparse = []
     for k in range(cube.nbands):
@@ -70,6 +72,13 @@ def to_sparse(cube: SpyFileSubclass) -> List:
 
 
 def from_sparse(hdr_path: str, sparse: List, metadata: Dict) -> SpyFileSubclass:
+    """
+    Generates a hyper-spectral cube from a sparse matrix.
+    :param hdr_path: a path to the cube's .hdr file.
+    :param sparse: the sparse matrix.
+    :param metadata: the cube's metadata.
+    :return: a new SpyFile object of the cube.
+    """
     cube = sp.io.envi.create_image(hdr_path,
                                    metadata,
                                    force=True,

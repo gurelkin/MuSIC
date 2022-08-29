@@ -21,50 +21,44 @@ def dilute(array: np.ndarray, keep: float) -> np.ndarray:
     return indices * transformed
 
 
-def inverse(f_array: np.ndarray) -> np.ndarray:
-    return np.abs(np.fft.ifft2(f_array))
+def inverse(ffted_array: np.ndarray) -> np.ndarray:
+    """
+    Performs IFFT on a 2-dimensional array.
+    :param ffted_array: am array of complex numbers.
+    :return: the IFFT of `ffted_array`.
+    """
+    return np.abs(np.fft.ifft2(ffted_array))
 
 
 def dilute_bands(cube: hyspec.SpyFileSubclass, keep: float) -> hyspec.SpyFileSubclass:
-    cube = hyspec.change_dtype(cube, np.csingle)
+    """
+    Takes a hyper-spectral cube and perform dilution by FFTon each of its bands.
+    :param cube: the hyper-spectral image.
+    :param keep: what percent of highest fourier coefficients to preserve.
+    :return: a new cube with FFTed images as bands.
+    """
     cube_mem = cube.open_memmap(interleave='bsq', writable=True)
+    complex_cube = hyspec.zeros_like(cube, dtype=np.csingle)
+    complex_cube_mem = complex_cube.open_memmap(interleave='bsq', writable=True)
     for k, band in enumerate(cube_mem):
-        cube_mem[k] = dilute(band, keep)
-    cube_mem.flush()
-    return sp.io.envi.open(*hyspec.hdr_raw(cube))
+        complex_cube_mem[k] = dilute(band, keep)
+    complex_cube_mem.flush()
+    return sp.io.envi.open(*hyspec.hdr_raw(complex_cube))
 
 
 def reconstruct_bands(cube: hyspec.SpyFileSubclass) -> hyspec.SpyFileSubclass:
+    """
+    Reconstructs the cube based on the Fourier coefficients left in each band.
+    :param cube: the FFTed cube.
+    :return: the reconstructed cube.
+    """
     cube_mem = cube.open_memmap(interleave='bsq', writable=True)
+    uint_cube = hyspec.zeros_like(cube, np.uint16)
+    uint_cube_mem = uint_cube.open_memmap(interleave='bsq', writable=True)
     for k, band in enumerate(cube_mem):
-        cube_mem[k] = inverse(band)
-    cube_mem.flush()
-    return hyspec.change_dtype(cube, np.uint16)
-
-# def dilute_bands(cube: hyspec.SpyFileSubclass, keep: float, new=True) -> hyspec.SpyFileSubclass:
-#     if new:
-#         cube = hyspec.copy(cube)
-#     mem_map = cube.open_memmap(interleave='bsq', writable=True)
-#     for k, band in enumerate(mem_map):
-#         mem_map[k] = dilute(band, keep)
-#     return sp.io.envi.open(*hyspec.hdr_raw(cube))
+        uint_cube_mem[k] = inverse(band)
+    uint_cube_mem.flush()
+    return sp.io.envi.open(*hyspec.hdr_raw(uint_cube))
 
 
-# def dilute_image(image: hyspec.SpyFileSubclass, keep: float, new=True) -> None:
-#     if new:
-#         image = hyspec.copy(image)
-#     mem_map = image.open_memmap(interleave='bsq', writable=True)
-#     new_mem_map = dilute(mem_map, keep)
-#     for k in range(image.nbands):
-#         mem_map[k] = new_mem_map[k]
-
-
-# def dilute_pixels(image: hyspec.SpyFileSubclass, keep: float, new=True) -> None:
-#     if new:
-#         image = hyspec.copy(image)
-#     mem_map = image.open_memmap(interleave='bip', writable=True)
-#     for i in range(image.nrows):
-#         for j in range(image.ncols):
-#             pixel = mem_map[i][j]
-#             mem_map[i][j] = dilute(pixel, keep)
 

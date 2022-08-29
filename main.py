@@ -1,8 +1,11 @@
 import os
 from typing import List
+
+import numpy
 import spectral as sp
 import pickle
 import zlib
+import matplotlib.pyplot as plt
 
 import diff
 import fourier
@@ -53,6 +56,7 @@ def rho_decompress(hdr: str, dfl: str) -> str:
     return cube.filename
 
 
+# TODO: remove extra files after decompressing
 def fft_compress(hdr: str, raw: str) -> str:
     cube = sp.io.envi.open(hdr, raw)
     cube_fft = fourier.dilute_bands(cube, KEEP)
@@ -64,6 +68,8 @@ def fft_compress(hdr: str, raw: str) -> str:
     return deflate(sps)
 
 
+# TODO: not working, gets an image full of zeroes.
+# TODO: remove `successfully` message from compression and decompression and move it to menu.
 def ifft_decompress(hdr: str, dfl: str) -> str:
     sps = inflate(dfl)
     with open(sps, mode='rb') as sps_file:
@@ -104,7 +110,7 @@ Command Options:
 
 
 def invalid(command: List[str]) -> None:
-    print(f"Invalid command: `{' '.join(command)}`")
+    print(f"Invalid command: \'{' '.join(command)}\'")
 
 
 def menu(args: List[str]) -> bool:
@@ -120,7 +126,7 @@ def menu(args: List[str]) -> bool:
             os.remove(args[1])
         else:
             invalid(args)
-    elif len(args) == 4:
+    elif len(args) == 4 and args[2] == 'using':
         if (args[0], args[3]) == ('compress', 'delta'):
             raw_path = args[1]
             new_path = delta_compress(raw_path.replace(".raw", ".hdr"), raw_path)
