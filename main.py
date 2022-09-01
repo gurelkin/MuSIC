@@ -1,11 +1,8 @@
 import os
 from typing import List
-
-import numpy
 import spectral as sp
 import pickle
 import zlib
-import matplotlib.pyplot as plt
 
 import diff
 import fourier
@@ -29,7 +26,6 @@ def deflate(path: str) -> str:
     dfl_path = path + ".dfl"
     with open(dfl_path, mode='wb') as dfl_file:
         dfl_file.write(compressed)
-    print(f"\'{path}\' was successfully compressed")
     return dfl_path
 
 
@@ -39,7 +35,6 @@ def inflate(dfl_path: str) -> str:
     og_path = dfl_path[:dfl_path.rindex('.')]
     with open(og_path, mode='wb') as og_file:
         og_file.write(decompressed)
-    print(f"\'{dfl_path}\' was successfully decompressed")
     return og_path
 
 
@@ -68,8 +63,6 @@ def fft_compress(hdr: str, raw: str) -> str:
     return deflate(sps)
 
 
-# TODO: not working, gets an image full of zeroes.
-# TODO: remove `successfully` message from compression and decompression and move it to menu.
 def ifft_decompress(hdr: str, dfl: str) -> str:
     sps = inflate(dfl)
     with open(sps, mode='rb') as sps_file:
@@ -79,14 +72,11 @@ def ifft_decompress(hdr: str, dfl: str) -> str:
     return cube.filename
 
 
-HDR = "C:/Users/gursh/hs/image.hdr"  # TODO: remove
-RAW = "C:/Users/gursh/hs/image.raw"  # TODO: remove
-
 KEEP = 10
 
 HELP_STR = """
-MuSIC - Multi-Spectral Image Compressor (c) Gur Elkin
------------------------------------------------------
+MuSIC - Multi-Spectral Image Compressor by Gur Elkin (2022)
+-----------------------------------------------------------
 
 Command Options:
 
