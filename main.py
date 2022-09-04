@@ -21,6 +21,9 @@ def _decompose_path(path: str) -> tuple[str, str, str]:
 
 
 def deflate(path: str) -> str:
+    """
+    Applies the DEFLATE algorithm on the file mentioned in `path`
+    """
     with open(path, mode='rb') as raw_file:
         compressed = zlib.compress(raw_file.read())
     dfl_path = path + ".dfl"
@@ -30,6 +33,9 @@ def deflate(path: str) -> str:
 
 
 def inflate(dfl_path: str) -> str:
+    """
+    Decompresses a deflated file mentioned in `path`
+    """
     with open(dfl_path, mode='rb') as dfl_file:
         decompressed = zlib.decompress(dfl_file.read())
     og_path = dfl_path[:dfl_path.rindex('.')]
@@ -51,7 +57,6 @@ def rho_decompress(hdr: str, dfl: str) -> str:
     return cube.filename
 
 
-# TODO: remove extra files after decompressing
 def fft_compress(hdr: str, raw: str) -> str:
     cube = sp.io.envi.open(hdr, raw)
     cube_fft = fourier.dilute_bands(cube, KEEP)
@@ -81,10 +86,10 @@ MuSIC - Multi-Spectral Image Compressor by Gur Elkin (2022)
 Command Options:
 
 >>> compress <path> using <method>
-    To compress the file at <path> by the specified method.
+    To compress the RAW file at <path> by the specified method.
 
 >>> decompress <path> using <method>
-    To decompress the file at <path> that was compressed by the specified method.
+    To decompress the DFL file at <path> that was compressed by the specified method.
 
 >>> delete <path>
     To delete the file at the specified path.
@@ -95,8 +100,13 @@ Command Options:
 >>> exit
     To exit the program.
 
-<method> = fft, delta
+<method> = deflate, delta, fft
 """
+
+
+def _delete(*args) -> None:
+    for path in args:
+        os.remove(path)
 
 
 def invalid(command: List[str]) -> None:
@@ -117,21 +127,43 @@ def menu(args: List[str]) -> bool:
         else:
             invalid(args)
     elif len(args) == 4 and args[2] == 'using':
-        if (args[0], args[3]) == ('compress', 'delta'):
+        if (args[0], args[3]) == ('compress', 'deflate'):
+            print("Compressing...")
+            raw_path = args[1]
+            new_path = deflate(raw_path)
+            print(f"The compressed file can be found at {new_path}")
+        elif (args[0], args[3]) == ('decompress', 'deflate'):
+            print("Decompressing...")
+            dfl_path = args[1]
+            new_path = inflate(dfl_path)
+            _delete(dfl_path)
+            print(f"The decompressed file can be found at {new_path}")
+        elif (args[0], args[3]) == ('compress', 'delta'):
+            print("Compressing...")
             raw_path = args[1]
             new_path = delta_compress(raw_path.replace(".raw", ".hdr"), raw_path)
             print(f"The compressed file can be found at {new_path}")
         elif (args[0], args[3]) == ('decompress', 'delta'):
+            print("Decompressing...")
             dfl_path = args[1]
             new_path = rho_decompress(dfl_path.replace(".raw.dfl", ".hdr"), dfl_path)
+            _delete(dfl_path)
             print(f"The decompressed file can be found at {new_path}")
         elif (args[0], args[3]) == ('compress', 'fft'):
+            print("Compressing...")
             raw_path = args[1]
             new_path = fft_compress(raw_path.replace(".raw", ".hdr"), raw_path)
+            _delete(raw_path.replace(".raw", "_.raw"),
+                    raw_path.replace(".raw", "_.sps"))
             print(f"The compressed file can be found at {new_path}")
         elif (args[0], args[3]) == ('decompress', 'fft'):
+            print("Decompressing...")
             dfl_path = args[1]
             new_path = ifft_decompress(dfl_path.replace(".sps.dfl", ".hdr"), dfl_path)
+            _delete(dfl_path,
+                    dfl_path.replace(".sps.dfl", ".sps"),
+                    dfl_path.replace(".sps.dfl", ".hdr"),
+                    dfl_path.replace(".sps.dfl", ".raw"))
             print(f"The decompressed file can be found at {new_path}")
         else:
             invalid(args)
@@ -142,6 +174,7 @@ def menu(args: List[str]) -> bool:
 
 def main():
     sp.settings.envi_support_nonlowercase_params = True
+    print("Welcome to the hyperspectral cube compressor!\n[Type 'help' to view command options]")
     stop = False
     while not stop:
         args = input("Insert a command: ").split(' ')
