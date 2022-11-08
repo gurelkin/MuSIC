@@ -19,6 +19,9 @@ Compression algorithms like JPEG’s use image transforms to store only a subset
 By that, they reduce the number of effective components in the image, increasing its compressibility. 
 In my implementation, I applied the FFT over each slice of the cube separately, and then equated to zero its smallest coefficients.
 
+After applying a method, the program uses zlib's implementation of the DEFLATE algorithm to enhance the compression. 
+As can be seen in `results.png`, by preprocessing our images using the above methods, we get higher compression ratio.
+
 ### Usage
 This program works with hyperspectral images in ENVI header format. 
 By calling the `help` command, a menu will be printed, displaying the various compression options.
