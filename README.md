@@ -20,6 +20,6 @@ By that, they reduce the number of effective components in the image, increasing
 In my implementation, I applied the FFT over each slice of the cube separately, and then equated to zero its smallest coefficients.
 
 ### Usage
-This program works with hyperspectral images with ENVI header format. 
+This program works with hyperspectral images in ENVI header format. 
 By calling the `help` command, a menu will be printed, displaying the various compression options.
 Important note: the image's `.raw` and `.hdr` files must have the same name and be located in the same directory.
